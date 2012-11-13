@@ -1,0 +1,5 @@
+modules.xml
+zenoss.iml
+*.pyc
+.idea*
+.idea/*
