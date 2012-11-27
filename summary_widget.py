@@ -15,15 +15,17 @@ class summary_widget(QWidget):
         critical = severity[0]
         error = severity[1]
         warning = severity[2]
+
         self.sumCrit = QLabel()
         self.sumCrit.setText(" CRITICALS: " + str(critical))
         self.sumErr = QLabel("ERRORS: " + str(error))
         self.sumWarn = QLabel("WARNINGS: " + str(warning))
-
+        self.green = QLabel("OK \t")
         self.sumCrit.setFixedSize(80, 20)
         self.sumErr.setFixedSize(70, 20)
         self.sumWarn.setFixedSize(90, 20)
-
+        self.green.setFixedSize(50, 20
+        )
         #self.sumCrit.setStyleSheet("font-size:14px;")
 
         summary = []
@@ -44,9 +46,10 @@ class summary_widget(QWidget):
                 Fontcolor = "color:black"
 
             summary[x].setStyleSheet(" background-color: " + color + "; border:1px solid #000;" + Fontcolor)
-
+        self.green.setStyleSheet(" background-color: green; border:1px solid #000; color:white")
+        self.green.hide()
         self.iconButton = QLabel()
-        self.iconButton.setPixmap(QPixmap.fromImage(QImage(self.basedir + "/Zenoss_Z_green.png")))
+        self.iconButton.setPixmap(QPixmap.fromImage(QImage(self.basedir + "/zenstamon_small.png")))
         self.iconButton.setAutoFillBackground(True)
         self.iconButton.setStyleSheet("color: green;font-size:14px;")
         self.iconButton.setAttribute(Qt.WA_TranslucentBackground)
@@ -56,6 +59,7 @@ class summary_widget(QWidget):
         Summarylayout.addWidget(summary[0])
         Summarylayout.addWidget(summary[1])
         Summarylayout.addWidget(summary[2])
+        Summarylayout.addWidget(self.green)
         #Summarylayout.addWidget(summary[3])
         Summarylayout.insertStretch(5)
         Summarylayout.setSpacing(0)
@@ -82,4 +86,8 @@ class summary_widget(QWidget):
         else:
             self.sumWarn.show()
 
+        if severity[0] == 0 and severity[1] == 0 and severity[2] == 0:
+            self.green.show()
+        else:
+            self.green.hide()
         self.sumWarn.repaint()

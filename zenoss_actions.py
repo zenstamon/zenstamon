@@ -1,6 +1,8 @@
 __author__ = 'c0stos3'
 
 from zenoss_api import *
+from urllib2 import *
+import logging
 
 class zenoss_actions(object):
     def __init__(self, parent=None, Server=None):
@@ -8,13 +10,30 @@ class zenoss_actions(object):
         self.server = Server
         x = 0
         ########
+        FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
+
+        logging.basicConfig(filename='zenoss_log.log', level=logging.DEBUG, format='%(asctime)s %(message)s',
+            datefmt='%m/%d/%Y %I:%M:%S %p')
+
 
     ##Get Zenoss Data
     ########
 
     def getEvents(self):
-        z = ZenossAPIExample(Server=self.server)
-        events = z.get_event()
+        try:
+            z = ZenossAPIExample(Server=self.server)
+            events = z.get_event()
+        except URLError as u:
+            events = False
+            logging.exception("URLError: %s", u)
+            pass
+        except ValueError as e:
+            events = False
+            logging.exception("ValueError: %s", e)
+            pass
+        except:
+            logging.exception("Unknown Error: ")
+
         return events
 
     def summaryEvents(self, events ):
@@ -47,3 +66,20 @@ class zenoss_actions(object):
         severity.append(clear)
 
         return severity
+
+    def deleteEvent(self, Uid):
+        try:
+            z = ZenossAPIExample(Server=self.server)
+            events = z.remove_event(Uid)
+        except URLError as u:
+            events = False
+            logging.exception("URLError: %s", u)
+            pass
+        except ValueError as e:
+            events = False
+            logging.exception("ValueError: %s", e)
+            pass
+        except:
+            logging.exception("Unknown Error: ")
+
+        pass

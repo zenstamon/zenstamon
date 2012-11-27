@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Zenstamon"
-#define MyAppVersion ".2"
+#define MyAppVersion "1.0"
 #define MyAppExeName "zenstamon.exe"
 
 [Setup]
@@ -16,8 +16,8 @@ AppVersion={#MyAppVersion}
 DefaultDirName={sd}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-OutputBaseFilename=Zenstamon_.2_setup
-SetupIconFile=C:\zenstamon\dist\zenstamon\resources\zenstamon.ico
+OutputBaseFilename=Zenstamon_1.0_setup
+SetupIconFile=C:\zenstamon.ico
 InternalCompressLevel=max
 Compression=lzma
 SolidCompression=yes

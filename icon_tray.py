@@ -32,18 +32,15 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
         self.connect(self.action_show, SIGNAL("triggered()"), self.display_app)
         self.connect(self.action_show_summary, SIGNAL("triggered()"), self.display_summ)
         self.connect(self, SIGNAL("activated(QSystemTrayIcon::ActivationReason)"), self.cb_systray_activated)
-        #traySignal = "activated(QSystemTrayIcon::ActivationReason)"
-        #self.connect(self, SIGNAL("triggered()"), self.icon_activated)
-        #self.activated.connect(self.icon_activated)
 
         self.menu.addAction(self.action_show)
         self.menu.addAction(self.action_show_summary)
         separator = QtGui.QAction(self)
         separator.setSeparator(True)
         self.menu.addAction(separator)
-        self.menu.addAction(self.action_ok)
-        self.menu.addAction(self.action_warn)
-        self.menu.addAction(self.action_crit)
+        #self.menu.addAction(self.action_ok)
+        #self.menu.addAction(self.action_warn)
+        #self.menu.addAction(self.action_crit)
         separator2 = QtGui.QAction(self)
         separator2.setSeparator(True)
         self.menu.addAction(separator2)
@@ -56,8 +53,10 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
 
     def cb_systray_activated(self, reason):
         #print(reason)
-        #self.showMessage("test","test2")
-        pass
+        if reason == QSystemTrayIcon.Trigger:
+            self.parent().show()
+            self.parent().setWindowState(self.parent().windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+            self.parent().activateWindow()
 
     def set_icon_warn(self, play):
         warnIcon = QtGui.QIcon(self.basedir + "/Zenoss_O_yellow.png")
@@ -66,6 +65,14 @@ class SystemTrayIcon(QtGui.QSystemTrayIcon):
             QtGui.QSound(path).play()
             #print("play warning")
         self.setIcon(warnIcon)
+
+    def set_icon_error(self, play):
+        errorIcon = QtGui.QIcon(self.basedir + "/Zenoss_O_orange.png")
+        path = os.path.join(self.basedir, "warning.wav")
+        if play == True:
+            QtGui.QSound(path).play()
+            #print("play warning")
+        self.setIcon(errorIcon)
 
     def set_icon_critical(self, play):
         relativename = "Zenoss_O_red.png"

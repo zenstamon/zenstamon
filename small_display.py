@@ -1,4 +1,4 @@
-from PyQt4.QtCore import (Qt, SIGNAL, SLOT)
+from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 import sys
 import os
@@ -30,13 +30,14 @@ class summary_display(QMainWindow):
         #w=iconButton.width()+self.sumCrit.width()+self.sumErr.width()+self.sumWarn.width()
         w = 275
         self.setFixedSize(w, 50)
-        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint | Qt.Tool)
 
         self.setCentralWidget(centerWgt)
         self.setStyleSheet("background:transparent;")
         self.setAttribute(Qt.WA_TranslucentBackground)
 
         self.setStyleSheet(" color: black")
+
 
     def setData(self, severity):
         self.summaryWgt.updateCount(severity)
@@ -64,3 +65,12 @@ class summary_display(QMainWindow):
         if event.buttons() == Qt.LeftButton:
             self.move(event.globalPos().x() - self.drag_position.x(), event.globalPos().y() - self.drag_position.y())
             event.accept()
+
+    mouseEnterEvent = pyqtSignal()
+    mouseOutEvent = pyqtSignal()
+
+    def enterEvent(self, event):
+        self.mouseEnterEvent.emit()
+
+    def leaveEvent(self, event):
+        self.mouseOutEvent.emit()

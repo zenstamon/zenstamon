@@ -7,41 +7,53 @@ import ConfigParser
 import base64
 import zlib
 from Conf import Server
+import ast
+
 
 class settings_display(QMainWindow):
-    def __init__(self, parent=None, Server=None):
+    def __init__(self, parent=None):
         super(settings_display, self).__init__(None)
         #add all keywords to object
-        self.server = Server
-        self.setFixedSize(200, 300)
+        self.server = None
+        self.setFixedSize(250, 300)
         self.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.setWindowTitle('Zenstamon Settings')
         self.configfile = os.path.expanduser('~') + os.sep + "zenstamon.conf"
         self.createMenu()
-        self.readConfigData()
 
 
-    def readConfigData(self):
-        if os.path.exists(self.configfile):
-            print self.server.server_url
-            self.serverTxt.setText(self.server.server_url)
-            self.serverTxt.repaint()
-            self.PortTxt.setText(self.server.server_port)
-            self.PortTxt.repaint()
-            self.usernameTxt.setText(self.server.username)
-            self.usernameTxt.repaint()
-            self.passwordTxt.setText(self.server.password)
+    def setConfigData(self, conf):
+        #print self.server.server_url
+        self.serverTxt.setText(conf.server.server_url)
+        self.serverTxt.repaint()
+        self.PortTxt.setText(conf.server.server_port)
+        self.PortTxt.repaint()
+        self.usernameTxt.setText(conf.server.username)
+        self.usernameTxt.repaint()
+        self.passwordTxt.setText(conf.server.password)
+        self.passwordTxt.repaint()
 
-            self.passwordTxt.repaint()
+        #events tab
+
+        self.hostcol.setChecked(ast.literal_eval(conf.eventConf.host))
+        self.statecol.setChecked(ast.literal_eval(conf.eventConf.state))
+        self.messagecol.setChecked(ast.literal_eval(conf.eventConf.message))
+        self.firstTimeCol.setChecked(ast.literal_eval(conf.eventConf.first))
+        self.lastTimeCol.setChecked(ast.literal_eval(conf.eventConf.last))
+        self.countcol.setChecked(ast.literal_eval(conf.eventConf.count))
+        self.eventclasscol.setChecked(ast.literal_eval(conf.eventConf.eventclass))
+        self.refreshTxt.setText(conf.eventConf.duration)
+
 
     def createMenu(self):
         self.tabbar = QTabWidget(self)
 
         self.createHomepage()
         self.serverInfoTab()
-
+        self.eventConfig()
         self.tabbar.addTab(self.hometab, "Home")
-        self.tabbar.addTab(self.servertab, "server")
+        self.tabbar.addTab(self.servertab, "Server")
+        self.tabbar.addTab(self.eventtab, "Event")
         self.setCentralWidget(self.tabbar)
 
 
@@ -69,7 +81,7 @@ class settings_display(QMainWindow):
 
         #Server info
         hostLayout = QHBoxLayout()
-        hostLbl = QLabel("Server: ")
+        hostLbl = QLabel("IP Address: ")
         self.serverTxt = QLineEdit()
         self.serverTxt.setInputMethodHints(Qt.ImhUrlCharactersOnly)
         hostLayout.addWidget(hostLbl)
@@ -116,46 +128,95 @@ class settings_display(QMainWindow):
         self.connect(self.cancelHBtn, SIGNAL("clicked()"), self.quit)
         self.servertab.setLayout(mainLayout)
 
-    def createButtons(self):
-        b = 3
+    def eventConfig(self):
+        self.eventtab = QWidget()
+        btnLayout = QHBoxLayout()
+        self.saveEBtn = QPushButton("Save")
+        self.cancelEBtn = QPushButton("Cancel")
+        mainLayout = QVBoxLayout()
+
+        #Refresh Duration
+        refreshLayout = QHBoxLayout()
+        hostLbl = QLabel("Refresh Interval: ")
+        topLbl = QLabel("Select Columns to view")
+
+        self.refreshTxt = QLineEdit()
+        self.refreshTxt.setInputMethodHints(Qt.ImhDigitsOnly)
+        self.refreshTxt.setMaximumWidth(40)
+
+        refreshLayout.addWidget(hostLbl)
+        refreshLayout.insertStretch(1)
+        refreshLayout.addWidget(self.refreshTxt)
+        mainLayout.addItem(refreshLayout)
+
+        mainLayout.addWidget(topLbl)
+
+        #Event column options
+        self.firstTimeCol = QCheckBox("First Seen")
+        self.lastTimeCol = QCheckBox("Last Seen")
+        self.countcol = QCheckBox("Count")
+        self.messagecol = QCheckBox("Message")
+        self.hostcol = QCheckBox("Host")
+        self.statecol = QCheckBox("Status")
+        self.eventclasscol = QCheckBox("Event Class")
+        mainLayout.addWidget(self.hostcol)
+        mainLayout.addWidget(self.statecol)
+        mainLayout.addWidget(self.messagecol)
+        mainLayout.addWidget(self.firstTimeCol)
+        mainLayout.addWidget(self.lastTimeCol)
+        mainLayout.addWidget(self.countcol)
+        mainLayout.addWidget(self.eventclasscol)
+        self.hostcol.setChecked(True)
+        self.statecol.setChecked(True)
+        self.messagecol.setChecked(True)
+
+        mainLayout.stretch(0)
+        #Buttons
+        btnLayout.addWidget(self.saveEBtn)
+        btnLayout.addWidget(self.cancelEBtn)
+        mainLayout.addItem(btnLayout)
+
+        self.connect(self.saveEBtn, SIGNAL("clicked()"), self.savePage)
+        self.connect(self.cancelEBtn, SIGNAL("clicked()"), self.quit)
+        self.eventtab.setLayout(mainLayout)
 
     def quit(self):
         self.hide()
 
+    menuSaveClick = pyqtSignal()
+
     def savePage(self):
+        config = ConfigParser.ConfigParser()
+        config.add_section("Server")
+        config.set("Server", "server_url", self.serverTxt.text())
+        config.set("Server", "server_port", self.PortTxt.text())
+        tmpUsr = self.usernameTxt.text()
+        tmpUsr = self.Obfuscate(tmpUsr)
+        config.set("Server", "username", tmpUsr)
+        encryptPass = self.passwordTxt.text()
+        encryptPass = self.Obfuscate(encryptPass)
+        config.set("Server", "password", encryptPass)
+
+        config.add_section("Events")
+        config.set("Events", "duration", self.refreshTxt.text())
+        config.set("Events", "host", self.hostcol.isChecked())
+        config.set("Events", "state", self.statecol.isChecked())
+        config.set("Events", "message", self.messagecol.isChecked())
+        config.set("Events", "first_seen", self.firstTimeCol.isChecked())
+        config.set("Events", "last_seen", self.lastTimeCol.isChecked())
+        config.set("Events", "count", self.countcol.isChecked())
+        config.set("Events", "event_class", self.eventclasscol.isChecked())
+
         #check if file exists, if so read from file
         if  os.path.exists(self.configfile):
-            config = ConfigParser.ConfigParser()
-            config.add_section("Zenstamon")
-            config.set("Zenstamon", "Server", self.serverTxt.text())
-            config.set("Zenstamon", "Port", self.PortTxt.text())
-            tmpUsr = self.usernameTxt.text()
-            tmpUsr = self.Obfuscate(tmpUsr)
-            config.set("Zenstamon", "User", tmpUsr)
-            encryptPass = self.passwordTxt.text()
-            encryptPass = self.Obfuscate(encryptPass)
-            config.set("Zenstamon", "Password", encryptPass)
             os.remove(self.configfile)
-            f = open(os.path.normpath(self.configfile), "w")
-            config.write(f)
-            f.close()
+        f = open(os.path.normpath(self.configfile), "w")
+        config.write(f)
+        f.close()
 
-            #file does not exist and we create one.
-        else:
-            config = ConfigParser.ConfigParser()
-            config.add_section("Zenstamon")
-            config.set("Zenstamon", "Server", self.serverTxt.text())
-            config.set("Zenstamon", "Port", self.PortTxt.text())
-            tmpUsr = self.usernameTxt.text()
-            tmpUsr = self.Obfuscate(tmpUsr)
-            config.set("Zenstamon", "User", tmpUsr)
-            encryptPass = self.passwordTxt.text()
-            encryptPass = self.Obfuscate(encryptPass)
-            config.set("Zenstamon", "Password", encryptPass)
+        self.hide()
+        self.menuSaveClick.emit()
 
-            f = open(os.path.normpath(self.configfile), "w")
-            config.write(f)
-            f.close()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

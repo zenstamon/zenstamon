@@ -10,6 +10,7 @@ class Conf(object):
         self.unconfigured = True
         self.configfile = os.path.expanduser('~') + os.sep + "zenstamon.conf"
         self.server = Server()
+        self.eventConf = EventColumns()
         self.server.server_url = ""
         self.server.server_port = ""
         self.server.username = ""
@@ -21,14 +22,27 @@ class Conf(object):
             for section in config.sections():
                 for i in config.items(section):
                     object.__setattr__(self, i[0], i[1])
-                    print i[0] + " " + i[1]
+                    #print i[0] + " " + i[1]
                     self.unconfigured = False
-            print self.__dict__;
+                    #print(self.__dict__)
 
             self.server.server_url = self.__dict__['server_url']
             self.server.server_port = self.__dict__['server_port']
             self.server.username = self.__dict__['username']
             self.server.password = self.__dict__['password']
+
+            self.eventConf.duration = self.__dict__['duration']
+            self.eventConf.host = self.__dict__['host']
+            self.eventConf.state = self.__dict__['state']
+            self.eventConf.message = self.__dict__['message']
+            self.eventConf.first = self.__dict__['first_seen']
+            self.eventConf.last = self.__dict__['last_seen']
+            self.eventConf.count = self.__dict__['count']
+            self.eventConf.eventclass = self.__dict__['event_class']
+
+
+    def createConfigFile(self):
+        pass
 
     def Obfuscate(self, string, count=5):
         """
@@ -64,3 +78,19 @@ class Server(object):
         self.server_port = ""
         self.username = ""
         self.password = ""
+
+
+class EventColumns(object):
+    """
+    list of display options for events
+    """
+
+    def __init__(self):
+        self.duration = "60"
+        self.host = "True"
+        self.state = "True"
+        self.message = "True"
+        self.first = "False"
+        self.last = "False"
+        self.count = "False"
+        self.eventclass = "False"

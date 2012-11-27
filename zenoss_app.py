@@ -57,7 +57,7 @@ class zenoss_window(QMainWindow):
         appName = QLabel("Zenstamon")
 
         iconButton = QLabel()
-        iconButton.setPixmap(QPixmap.fromImage(QImage(self.basedir + "/Zenoss_Z_green.png")))
+        iconButton.setPixmap(QPixmap.fromImage(QImage(self.basedir + "/zenstamon_small.png")))
         iconButton.setAutoFillBackground(True)
         iconButton.setStyleSheet("color: green;font-size:14px;")
         appName.setStyleSheet("font-size:14px;")
@@ -177,7 +177,8 @@ class zenoss_window(QMainWindow):
         eventGrid = []
         for e in events['events'][:]:
             eventGrid.append(Event(e['device']['text'] + '\t',
-                e['severity'], e['message'], e['evid']))
+                e['severity'], e['message'], e['evid'], e['firstTime'], e['lastTime'], e['count'],
+                e['eventClass']['text'], e['component']['text']))
 
         eventGrid = self.sortList(eventGrid, totalRows)
 
@@ -201,8 +202,12 @@ class zenoss_window(QMainWindow):
                 play = True
                 self.state = critical
             self.trayIcon.set_icon_critical(play)
-
-        elif (warning > 0 or error > 0):
+        elif error > 0:
+            if self.state != error:
+                play = True
+                self.state = error
+            self.trayIcon.set_icon_error(play)
+        elif (warning > 0 ):
             if self.state != warning:
                 play = True
                 self.state = warning
@@ -213,12 +218,20 @@ class zenoss_window(QMainWindow):
 
     def setlistEvents(self, eventGrid, totalRows):
         total = 0
-
+        self.eventUID = []
         self.tableWidget.setRowCount(totalRows)
         for x in range(totalRows):
             self.tableWidget.setItem(total, 0, QTableWidgetItem(eventGrid[x].server))
             self.tableWidget.setItem(total, 1, QTableWidgetItem(eventGrid[x].severity))
             self.tableWidget.setItem(total, 2, QTableWidgetItem(eventGrid[x].message))
+            self.tableWidget.setItem(total, 3, QTableWidgetItem(eventGrid[x].component))
+            self.tableWidget.setItem(total, 4, QTableWidgetItem(str(eventGrid[x].count)))
+
+            self.tableWidget.setItem(total, 5, QTableWidgetItem(eventGrid[x].firstseen))
+            self.tableWidget.setItem(total, 6, QTableWidgetItem(eventGrid[x].lastseen))
+
+            self.eventUID.append(eventGrid[x].eventid)
+
             if eventGrid[x].severity == "CRITICAL":
                 color = "red"
                 txtcolor = "white"
@@ -228,7 +241,7 @@ class zenoss_window(QMainWindow):
             elif eventGrid[x].severity == "WARNING":
                 color = "yellow"
                 txtcolor = "black"
-            for y in range(3):
+            for y in range(7):
                 self.tableWidget.item(x, y).setBackgroundColor(QColor(color))
                 self.tableWidget.item(x, y).setTextColor(QColor(txtcolor))
                 self.tableWidget.item(x, y).setFlags(Qt.NoItemFlags)
@@ -245,26 +258,52 @@ class zenoss_window(QMainWindow):
         tmpWidth = 0
         tmpHeight = 0
         for x in range(self.tableWidget.columnCount()):
-            tmpWidth = tmpWidth + self.tableWidget.columnWidth(x)
-            # print(self.tableWidget.columnWidth(x))
-            #tmpWidth=tmpWidth+600
+            if not self.tableWidget.isColumnHidden(x):
+                tmpWidth = tmpWidth + self.tableWidget.columnWidth(x)
+
+
+                # print(self.tableWidget.columnWidth(x))
+                #tmpWidth=tmpWidth+600
         for x in range(self.tableWidget.rowCount() + 1):
             tmpHeight = tmpHeight + self.tableWidget.rowHeight(x)
             #print(str(tmpWidth) + ", " + str(tmpHeight))
         #print(str(w)+" -- "+str(h))
         #print(str(tmpWidth+w))
-        self.tableWidget.setFixedSize(tmpWidth + 10, tmpHeight + 30)
 
-    def set_icon_ok(self):
-        pass
 
+
+
+        screenHeight = QDesktopWidget().availableGeometry().height()
+        screenWidth = QDesktopWidget().availableGeometry().width()
+        if screenHeight > tmpHeight + 30:
+            self.tableWidget.setFixedSize(tmpWidth + 20, tmpHeight + 30)
+        else:
+            self.tableWidget.setFixedSize(tmpWidth + 20, screenHeight - 150)
+            #TODO -- Not sure if we want to move the screen if the size of the app window exceeds the size of the screen.
+            #self.move((screenWidth/2) -(tmpWidth/2) ,10)
+
+        self.setFixedWidth(tmpWidth + 40)
 
     def initTableEvents(self):
         #self.tableWidget = QTableWidget()
         self.tableWidget = event_widget(self)
         self.eventWgt = self.tableWidget
         self.eventWgt.repaint()
+        self.connect(self.tableWidget, SIGNAL("deleteEvent(PyQt_PyObject)"), self.deleteEvent)
 
+    def setConfigSettings(self, Config):
+        self.config = Config
+        self.tableWidget.setColHidden(Config)
+
+
+    def updateEventTable(self):
+        pass
+
+    def deleteEvent(self, row):
+        eventuid = self.eventUID[row]
+        self.emit(SIGNAL("deleteEvent(PyQt_PyObject)"), eventuid)
+        #self.emit(SIGNAL("deleteEvent(PyQt_PyObject)"), eventuid)
+        pass
 
     #@@@@@@@@
     ### Initialize GUI
@@ -323,7 +362,7 @@ class zenoss_window(QMainWindow):
 
         self.setAutoFillBackground(True)
         self.setStyleSheet("background-color: lightgray;") #cornflowerblue
-        self.setWindowIcon(QtGui.QIcon(self.basedir + '/Zenoss_Z_green.png'))
+        self.setWindowIcon(QtGui.QIcon(self.basedir + '/zenstamon_small.png'))
 
         self.setWindowTitle("Zenstamon")
 
